@@ -1,28 +1,25 @@
-import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, CircleMarker, Popup, Polyline } from "react-leaflet";
+import { useState } from "react";
 import { useTrafficState } from "@/hooks/useTrafficState";
 import { LANES, type Lane } from "@/backend/schemas";
 import { cn } from "@/lib/utils";
-import "leaflet/dist/leaflet.css";
 
-const CENTER: [number, number] = [12.9716, 77.5946];
-const OFFSETS: Record<Lane, [number, number]> = {
-  north: [12.9726, 77.5946], south: [12.9706, 77.5946],
-  east: [12.9716, 77.5956], west: [12.9716, 77.5936],
+const POS: Record<Lane, { x: number; y: number }> = {
+  north: { x: 50, y: 22 },
+  south: { x: 50, y: 78 },
+  east: { x: 78, y: 50 },
+  west: { x: 22, y: 50 },
 };
 
 function colorFor(d: number) {
-  if (d < 0.4) return "#14b8a6";
-  if (d < 0.7) return "#EF9F27";
-  return "#E24B4A";
+  if (d < 0.4) return "hsl(var(--density-low))";
+  if (d < 0.7) return "hsl(var(--density-medium))";
+  return "hsl(var(--density-high))";
 }
 
 export function MapView() {
   const detections = useTrafficState((s) => s.detections);
   const emergency = useTrafficState((s) => s.emergency);
   const [mode, setMode] = useState<"markers" | "heat" | "both">("both");
-  const [ready, setReady] = useState(false);
-  useEffect(() => { setReady(true); }, []);
 
   return (
     <div className="bg-panel border border-panel rounded-lg p-4">
@@ -41,50 +38,59 @@ export function MapView() {
           ))}
         </div>
       </div>
-      <div className="h-72 rounded-md overflow-hidden border border-panel-border">
-        {ready && (
-          <MapContainer center={CENTER} zoom={16} className="h-full w-full" scrollWheelZoom={false}>
-            <TileLayer
-              attribution='&copy; OpenStreetMap'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      <div className="h-72 rounded-md overflow-hidden border border-panel-border bg-background relative">
+        <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+          {/* grid background */}
+          <defs>
+            <pattern id="grid" width="5" height="5" patternUnits="userSpaceOnUse">
+              <path d="M 5 0 L 0 0 0 5" fill="none" stroke="hsl(var(--panel-border))" strokeWidth="0.2" />
+            </pattern>
+          </defs>
+          <rect width="100" height="100" fill="url(#grid)" />
+          {/* roads */}
+          <rect x="46" y="0" width="8" height="100" fill="hsl(var(--secondary))" />
+          <rect x="0" y="46" width="100" height="8" fill="hsl(var(--secondary))" />
+          <line x1="50" y1="0" x2="50" y2="100" stroke="hsl(var(--muted-foreground))" strokeWidth="0.2" strokeDasharray="2 2" />
+          <line x1="0" y1="50" x2="100" y2="50" stroke="hsl(var(--muted-foreground))" strokeWidth="0.2" strokeDasharray="2 2" />
+
+          {/* heat halos */}
+          {(mode === "heat" || mode === "both") && LANES.map((l) => {
+            const d = detections[l]?.density_score ?? 0;
+            return (
+              <circle key={`h-${l}`} cx={POS[l].x} cy={POS[l].y}
+                r={6 + d * 10} fill={colorFor(d)} opacity="0.18" />
+            );
+          })}
+
+          {/* emergency corridor */}
+          {emergency && (
+            <line
+              x1={POS[emergency.corridor[0]].x} y1={POS[emergency.corridor[0]].y}
+              x2={POS[emergency.corridor[1]].x} y2={POS[emergency.corridor[1]].y}
+              stroke="hsl(var(--signal-green))" strokeWidth="1.2"
+              strokeDasharray="2 1.5" className="animate-corridor-dash"
             />
-            {(mode === "markers" || mode === "both") && LANES.map((l) => {
-              const d = detections[l]?.density_score ?? 0;
-              return (
-                <CircleMarker
-                  key={l}
-                  center={OFFSETS[l]}
-                  radius={8 + d * 16}
-                  pathOptions={{ color: colorFor(d), fillColor: colorFor(d), fillOpacity: 0.5 }}
-                >
-                  <Popup>
-                    <div style={{ fontFamily: "monospace", fontSize: 11 }}>
-                      <b>{l.toUpperCase()}</b><br />
-                      Density: {(d * 100).toFixed(0)}%<br />
-                      Vehicles: {detections[l] ? Object.values(detections[l]!.counts).reduce((a, b) => a + b, 0) : 0}
-                    </div>
-                  </Popup>
-                </CircleMarker>
-              );
-            })}
-            {(mode === "heat" || mode === "both") && LANES.map((l) => {
-              const d = detections[l]?.density_score ?? 0;
-              return (
-                <CircleMarker
-                  key={`h-${l}`} center={OFFSETS[l]}
-                  radius={30 + d * 50}
-                  pathOptions={{ color: "transparent", fillColor: colorFor(d), fillOpacity: 0.15 }}
-                />
-              );
-            })}
-            {emergency && (
-              <Polyline
-                positions={[OFFSETS[emergency.corridor[0]], OFFSETS[emergency.corridor[1]]]}
-                pathOptions={{ color: "#22c55e", weight: 5, dashArray: "8 6" }}
-              />
-            )}
-          </MapContainer>
-        )}
+          )}
+
+          {/* markers */}
+          {(mode === "markers" || mode === "both") && LANES.map((l) => {
+            const d = detections[l]?.density_score ?? 0;
+            return (
+              <g key={l}>
+                <circle cx={POS[l].x} cy={POS[l].y}
+                  r={2 + d * 4} fill={colorFor(d)}
+                  stroke="hsl(var(--background))" strokeWidth="0.4" />
+                <text x={POS[l].x} y={POS[l].y - (3 + d * 4)} fontSize="2.5"
+                  fontFamily="JetBrains Mono" fill="hsl(var(--foreground))" textAnchor="middle">
+                  {l[0].toUpperCase()} {(d * 100).toFixed(0)}%
+                </text>
+              </g>
+            );
+          })}
+        </svg>
+        <div className="absolute bottom-2 left-2 text-[10px] font-mono text-muted-foreground">
+          12.9716°N · 77.5946°E · Bengaluru
+        </div>
       </div>
     </div>
   );
