@@ -1,0 +1,138 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Control-room dark by default */
+    --background: 230 25% 4%;
+    --foreground: 210 40% 98%;
+
+    --card: 230 22% 8%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 230 22% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 185 100% 50%;
+    --primary-foreground: 230 25% 4%;
+
+    --secondary: 230 20% 12%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 230 20% 12%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 185 100% 45%;
+    --accent-foreground: 230 25% 4%;
+
+    --destructive: 350 100% 64%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 230 20% 15%;
+    --input: 230 20% 15%;
+    --ring: 185 100% 50%;
+
+    --radius: 0.75rem;
+
+    /* Traffic semantic tokens (HSL) */
+    --signal-red: 350 100% 64%;        /* Vivid Red */
+    --signal-yellow: 45 100% 55%;      /* Vivid Yellow */
+    --signal-green: 135 90% 55%;       /* Vivid Green */
+
+    --density-low: 185 100% 45%;
+    --density-medium: 45 100% 55%;
+    --density-high: 350 100% 64%;
+
+    --panel: 230 25% 6%;
+    --panel-border: 230 20% 14%;
+
+    --sidebar-background: 230 25% 4%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 185 100% 50%;
+    --sidebar-primary-foreground: 230 25% 4%;
+    --sidebar-accent: 230 20% 10%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 230 20% 14%;
+    --sidebar-ring: 185 100% 50%;
+  }
+
+  .dark {
+    --background: 230 25% 4%;
+    --foreground: 210 40% 98%;
+    --card: 230 22% 8%;
+    --card-foreground: 210 40% 98%;
+    --popover: 230 22% 8%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 185 100% 50%;
+    --primary-foreground: 230 25% 4%;
+    --secondary: 230 20% 12%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 230 20% 12%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 185 100% 45%;
+    --accent-foreground: 230 25% 4%;
+    --destructive: 350 100% 64%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 230 20% 15%;
+    --input: 230 20% 15%;
+    --ring: 185 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html, body, #root {
+    @apply bg-background text-foreground;
+    font-family: "Inter", system-ui, sans-serif;
+  }
+  .font-mono {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+  }
+}
+
+@layer utilities {
+  .text-signal-red { color: hsl(var(--signal-red)); }
+  .text-signal-yellow { color: hsl(var(--signal-yellow)); }
+  .text-signal-green { color: hsl(var(--signal-green)); }
+  .bg-signal-red { background-color: hsl(var(--signal-red)); }
+  .bg-signal-yellow { background-color: hsl(var(--signal-yellow)); }
+  .bg-signal-green { background-color: hsl(var(--signal-green)); }
+  /* Custom scrollbar to look sleek */
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}
+
+
+@keyframes emergency-pulse {
+  0%, 100% { box-shadow: 0 0 40px -10px hsl(var(--signal-red) / 0.5) inset, 0 0 0 1px hsl(var(--signal-red) / 0.5); }
+  50% { box-shadow: 0 0 60px 0px hsl(var(--signal-red) / 0.8) inset, 0 0 0 2px hsl(var(--signal-red)); }
+}
+@keyframes corridor-dash {
+  to { stroke-dashoffset: -28; }
+}
+@keyframes slide-down {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-emergency-pulse { animation: emergency-pulse 1.2s ease-in-out infinite; }
+.animate-corridor-dash { animation: corridor-dash 1s linear infinite; }
+.animate-slide-down { animation: slide-down 0.3s ease-out; }
+
+body {
+  background: radial-gradient(circle at 50% 0%, hsl(var(--primary) / 0.15) 0%, transparent 50%),
+              radial-gradient(circle at 100% 100%, hsl(var(--signal-red) / 0.05) 0%, transparent 40%),
+              hsl(var(--background));
+  background-attachment: fixed;
+}
+
